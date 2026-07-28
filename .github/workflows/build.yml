@@ -1,13 +1,10 @@
 name: Build
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - master
     paths-ignore:
-      - ".github/**"
-      - "**/*.md"
       - "src/Radarr.Api.*/openapi.json"
   pull_request:
     branches:
@@ -15,6 +12,7 @@ on:
     paths-ignore:
       - "src/NzbDrone.Core/Localization/Core/**"
       - "src/Radarr.Api.*/openapi.json"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -23,77 +21,60 @@ concurrency:
 env:
   FRAMEWORK: net8.0
   RAW_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  MAJOR_VERSION: 5.27.0
-  NODE_VERSION: 20.x
-  INNOVERSION: 6.7.2
+  RADARR_MAJOR_VERSION: 5
+  VERSION: 5.27.0
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     outputs:
-      framework: ${{ steps.variables.outputs.framework }}
-      version: ${{ steps.variables.outputs.version }}
       branch: ${{ steps.variables.outputs.branch }}
+      version: ${{ steps.variables.outputs.version }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+      - name: Setup Node.js (Volta)
+        uses: volta-cli/action@v4
 
-      - name: Setup Build Variables
+      - name: Setup Variables
         id: variables
         shell: bash
         run: |
-          RADARR_VERSION="${{ env.MAJOR_VERSION }}.$((GITHUB_RUN_NUMBER+2000))"
-          BRANCH_NAME="${RAW_BRANCH_NAME//\//-}"
-
-          echo "RADARRVERSION=$RADARR_VERSION" >> "$GITHUB_ENV"
-          echo "BUILD_SOURCEBRANCHNAME=$BRANCH_NAME" >> "$GITHUB_ENV"
-          echo "MAJORVERSION=${{ env.MAJOR_VERSION }}" >> "$GITHUB_ENV"
-          echo "MINORVERSION=$((GITHUB_RUN_NUMBER+2000))" >> "$GITHUB_ENV"
-
-          echo "framework=${{ env.FRAMEWORK }}" >> "$GITHUB_OUTPUT"
+          RADARR_VERSION="${{ env.VERSION }}.${{ github.run_number }}"
+          echo "RADARR_VERSION=$RADARR_VERSION" >> "$GITHUB_ENV"
+          echo "BRANCH=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_ENV"
+          echo "branch=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_OUTPUT"
           echo "version=$RADARR_VERSION" >> "$GITHUB_OUTPUT"
-          echo "branch=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Build Backend + Frontend + Installer
-        shell: bash
-        run: ./build.sh --backend --frontend --packages --installer
+      - name: Yarn Install
+        run: yarn install
 
-      - name: Publish linux-x64 Test Artifact
+      - name: Lint UI
+        run: yarn lint
+
+      - name: Build UI & Backend (linux-x64)
+        run: ./build.sh --backend --frontend --packages -f net8.0 -r linux-x64
+        env:
+          RADARR_VERSION: ${{ env.RADARR_VERSION }}
+          BRANCH: ${{ env.BRANCH }}
+
+      - name: Upload UI Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tests-linux-x64
-          path: _tests/${{ env.FRAMEWORK }}/linux-x64/publish/**/*
+          name: build_ui
+          path: _output/UI/**/*
 
-      - name: Publish win-x64 Test Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tests-win-x64
-          path: _tests/${{ env.FRAMEWORK }}/win-x64/publish/**/*
-
-      - name: Publish Linux Artifact
+      - name: Upload Linux Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build_linux
-          path: _artifacts/linux-*/**/*
-
-      - name: Publish Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build_windows
-          path: _artifacts/win-*/**/*
+          path: _output/linux-*/**/*
 
   unit_test:
     needs: build
@@ -107,42 +88,15 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Download Test Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tests-linux-x64
-          path: _tests
-
-      - name: Make Test Binaries Executable
-        shell: bash
-        run: |
-          chmod +x _tests/ffprobe
-          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
-          chmod +x _tests/test.sh
-
       - name: Run Unit Tests
-        shell: bash
-        env:
-          TEST_DIR: ${{ github.workspace }}/_tests
-        run: _tests/test.sh Linux Unit Test
-
-      - name: Upload Unit Test Results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-unit-linux
-          path: TestResult.xml
+        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS&TestCategory!=IntegrationTest"
 
   unit_test_postgres:
     needs: build
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        postgres: [14, 15]
     services:
       postgres:
-        image: postgres:${{ matrix.postgres }}
+        image: postgres:15
         env:
           POSTGRES_PASSWORD: radarr
           POSTGRES_USER: radarr
@@ -166,31 +120,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Download Test Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tests-linux-x64
-          path: _tests
-
-      - name: Make Test Binaries Executable
-        shell: bash
-        run: |
-          chmod +x _tests/ffprobe
-          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
-          chmod +x _tests/test.sh
-
       - name: Run Unit Tests (Postgres)
-        shell: bash
-        env:
-          TEST_DIR: ${{ github.workspace }}/_tests
-        run: _tests/test.sh Linux Unit Test
-
-      - name: Upload Unit Test Results (Postgres)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-unit-linux-postgres-${{ matrix.postgres }}
-          path: TestResult.xml
+        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS&TestCategory!=IntegrationTest"
 
   integration_test:
     needs: build
@@ -204,171 +135,5 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Download Test Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tests-linux-x64
-          path: _tests
-
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build_linux
-          path: _output
-
-      - name: Prepare Binary Directory
-        shell: bash
-        run: |
-          mkdir -p ./bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
-
-      - name: Make Test Binaries Executable
-        shell: bash
-        run: |
-          chmod +x _tests/ffprobe
-          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
-          chmod +x _tests/test.sh
-          chmod +x ./bin/Radarr
-
       - name: Run Integration Tests
-        shell: bash
-        env:
-          TEST_DIR: ${{ github.workspace }}/_tests
-        run: _tests/test.sh Linux Integration Test
-
-      - name: Upload Integration Test Results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-integration-linux
-          path: TestResult.xml
-
-  integration_test_postgres:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        postgres: [14, 15]
-    services:
-      postgres:
-        image: postgres:${{ matrix.postgres }}
-        env:
-          POSTGRES_PASSWORD: radarr
-          POSTGRES_USER: radarr
-          POSTGRES_DB: radarr
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U radarr" --health-interval=10s
-          --health-timeout=5s --health-retries=5
-    env:
-      Radarr__Postgres__Host: localhost
-      Radarr__Postgres__Port: 5432
-      Radarr__Postgres__User: radarr
-      Radarr__Postgres__Password: radarr
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
-      - name: Download Test Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tests-linux-x64
-          path: _tests
-
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build_linux
-          path: _output
-
-      - name: Prepare Binary Directory
-        shell: bash
-        run: |
-          mkdir -p ./bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
-
-      - name: Make Test Binaries Executable
-        shell: bash
-        run: |
-          chmod +x _tests/ffprobe
-          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
-          chmod +x _tests/test.sh
-          chmod +x ./bin/Radarr
-
-      - name: Run Integration Tests (Postgres)
-        shell: bash
-        env:
-          TEST_DIR: ${{ github.workspace }}/_tests
-        run: _tests/test.sh Linux Integration Test
-
-      - name: Upload Integration Test Results (Postgres)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-integration-linux-postgres-${{ matrix.postgres }}
-          path: TestResult.xml
-
-  automation_test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
-      - name: Download Test Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tests-linux-x64
-          path: _tests
-
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build_linux
-          path: _output
-
-      - name: Prepare Binary Directory
-        shell: bash
-        run: |
-          mkdir -p ./bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
-
-      - name: Make Test Binaries Executable
-        shell: bash
-        run: |
-          chmod +x _tests/ffprobe
-          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
-          chmod +x _tests/test.sh
-          chmod +x ./bin/Radarr
-
-      - name: Run Automation Tests
-        shell: bash
-        env:
-          TEST_DIR: ${{ github.workspace }}/_tests
-        run: _tests/test.sh Linux Automation Test
-
-      - name: Upload Automation Screenshots
-        if: ${{ hashFiles('**/*_test_screenshot.png') != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: automation-screenshots-linux
-          path: '**/*_test_screenshot.png'
-
-      - name: Upload Automation Test Results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-automation-linux
-          path: TestResult.xml
+        run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS"
