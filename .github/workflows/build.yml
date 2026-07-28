@@ -53,11 +53,8 @@ jobs:
       - name: Lint UI
         run: yarn lint
 
-      - name: Build UI
-        run: yarn build --env production
-
-      - name: Build Backend (linux-x64)
-        run: ./build.sh --backend --packages -f net8.0 -r linux-x64
+      - name: Build UI & Backend (linux-x64)
+        run: ./build.sh --backend --frontend --packages -f net8.0 -r linux-x64
         env:
           RADARR_VERSION: ${{ env.RADARR_VERSION }}
           BRANCH: ${{ env.BRANCH }}
