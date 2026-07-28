@@ -93,6 +93,7 @@ namespace NzbDrone.Core.Test.IndexerTests.NewznabTests
             var result = Subject.GetCapabilities(_settings);
 
             result.Should().NotBeNull();
+            ExceptionVerification.ExpectedErrors(1);
         }
 
         [Test]
