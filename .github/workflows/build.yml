@@ -46,7 +46,8 @@ jobs:
         id: variables
         shell: bash
         run: |
-          RADARR_VERSION="${{ env.VERSION }}.${{ github.run_number }}"
+          MAJOR_VER=$(grep -E '^\s*majorVersion:' azure-pipelines.yml | head -n 1 | awk -F"'" '{print $2}')
+          RADARR_VERSION="${MAJOR_VER:-5.27.0}.${{ github.run_number }}"
           echo "RADARR_VERSION=$RADARR_VERSION" >> "$GITHUB_ENV"
           echo "BRANCH=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_ENV"
           echo "branch=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_OUTPUT"

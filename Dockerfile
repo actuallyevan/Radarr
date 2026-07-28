@@ -12,7 +12,6 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
   org.opencontainers.image.source="${PACKAGE_AUTHOR}" \
   org.opencontainers.image.version="${VERSION}"
 
-# Copy the pre-compiled C# binaries and UI directly from the build context
 COPY _artifacts/linux-musl-x64/net8.0/Radarr /tmp/radarr-x64
 COPY _artifacts/linux-musl-arm64/net8.0/Radarr /tmp/radarr-arm64
 
