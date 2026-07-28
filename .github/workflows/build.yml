@@ -137,3 +137,54 @@ jobs:
 
       - name: Run Integration Tests
         run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest"
+
+  integration_test_postgres:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: [14, 15]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_PASSWORD: radarr
+          POSTGRES_USER: radarr
+          POSTGRES_DB: radarr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U radarr" --health-interval=10s
+          --health-timeout=5s --health-retries=5
+    env:
+      Radarr__Postgres__Host: localhost
+      Radarr__Postgres__Port: 5432
+      Radarr__Postgres__User: radarr
+      Radarr__Postgres__Password: radarr
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Run Integration Tests (Postgres)
+        run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest"
+
+  automation_test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Run Automation Tests
+        run: dotnet test src/NzbDrone.Automation.Test/Radarr.Automation.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest"
