@@ -101,7 +101,7 @@ jobs:
           path: _tests
 
       - name: Run All Unit Tests
-        run: dotnet test ./_tests/Radarr.*.Test.dll -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
+        run: dotnet test ./_tests/Radarr.*.Test.dll --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
 
   unit_test_postgres:
     needs: build
@@ -143,7 +143,7 @@ jobs:
           path: _tests
 
       - name: Run All Unit Tests (Postgres)
-        run: dotnet test ./_tests/Radarr.*.Test.dll -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
+        run: dotnet test ./_tests/Radarr.*.Test.dll --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
 
   integration_test:
     needs: build
@@ -175,7 +175,7 @@ jobs:
           cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. _tests/bin/
 
       - name: Run Integration Tests
-        run: dotnet test ./_tests/Radarr.Integration.Test.dll -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
+        run: dotnet test ./_tests/Radarr.Integration.Test.dll --filter "TestCategory!=ManualTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
 
   integration_test_postgres:
     needs: build
@@ -228,7 +228,7 @@ jobs:
           cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. _tests/bin/
 
       - name: Run Integration Tests (Postgres)
-        run: dotnet test ./_tests/Radarr.Integration.Test.dll -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
+        run: dotnet test ./_tests/Radarr.Integration.Test.dll --filter "TestCategory!=ManualTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
 
   automation_test:
     needs: build
@@ -260,4 +260,4 @@ jobs:
           cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. _tests/bin/
 
       - name: Run Automation Tests
-        run: dotnet test ./_tests/Radarr.Automation.Test.dll -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
+        run: dotnet test ./_tests/Radarr.Automation.Test.dll --filter "TestCategory!=ManualTest" --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
