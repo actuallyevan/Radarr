@@ -89,7 +89,11 @@ jobs:
           global-json-file: global.json
 
       - name: Run All Unit Tests
-        run: dotnet test src/Radarr.sln -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
+        run: |
+          dotnet build src/Radarr.sln -p:EnableAnalyzers=false
+          mkdir -p _tests/net8.0
+          cp -n _output/net8.0/*.dll _tests/net8.0/ || true
+          dotnet test src/Radarr.sln --no-build -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   unit_test_postgres:
     needs: build
@@ -121,7 +125,11 @@ jobs:
           global-json-file: global.json
 
       - name: Run All Unit Tests (Postgres)
-        run: dotnet test src/Radarr.sln -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
+        run: |
+          dotnet build src/Radarr.sln -p:EnableAnalyzers=false
+          mkdir -p _tests/net8.0
+          cp -n _output/net8.0/*.dll _tests/net8.0/ || true
+          dotnet test src/Radarr.sln --no-build -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   integration_test:
     needs: build
