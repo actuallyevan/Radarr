@@ -1,0 +1,90 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  FRAMEWORK: net8.0
+  RAW_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  RADARR_MAJOR_VERSION: 5
+  VERSION: 5.27.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.variables.outputs.branch }}
+      version: ${{ steps.variables.outputs.version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Setup Node.js (Volta)
+        uses: volta-cli/action@v4
+
+      - name: Setup Variables
+        id: variables
+        shell: bash
+        run: |
+          RADARR_VERSION="${{ env.VERSION }}.${{ github.run_number }}"
+          echo "RADARR_VERSION=$RADARR_VERSION" >> "$GITHUB_ENV"
+          echo "BRANCH=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_ENV"
+          echo "branch=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_OUTPUT"
+          echo "version=$RADARR_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Yarn Install
+        run: yarn install
+
+      - name: Lint UI
+        run: yarn lint
+
+      - name: Build UI
+        run: yarn build --env production
+
+      - name: Build Backend (linux-x64)
+        run: ./build.sh --backend --packages -f net8.0 -r linux-x64
+        env:
+          RADARR_VERSION: ${{ env.RADARR_VERSION }}
+          BRANCH: ${{ env.BRANCH }}
+
+      - name: Upload UI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_ui
+          path: _output/UI/**/*
+
+      - name: Upload Linux Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_linux
+          path: _output/linux-*/**/*
+
+  unit_test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Run Unit Tests
+        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS&TestCategory!=IntegrationTest"
