@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build_linux
-          path: _output/linux-*/**/*
+          path: _artifacts/linux-*/**/*
 
       - name: Publish linux-x64 Test Artifact
         uses: actions/upload-artifact@v4
