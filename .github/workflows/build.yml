@@ -21,8 +21,6 @@ concurrency:
 env:
   FRAMEWORK: net8.0
   RAW_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  RADARR_MAJOR_VERSION: 5
-  VERSION: 5.27.0
 
 jobs:
   build:
@@ -33,6 +31,8 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -46,8 +46,8 @@ jobs:
         id: variables
         shell: bash
         run: |
-          MAJOR_VER=$(grep -E '^\s*majorVersion:' azure-pipelines.yml | head -n 1 | awk -F"'" '{print $2}')
-          RADARR_VERSION="${MAJOR_VER:-5.27.0}.${{ github.run_number }}"
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0.0")
+          RADARR_VERSION="${TAG#v}"
           echo "RADARR_VERSION=$RADARR_VERSION" >> "$GITHUB_ENV"
           echo "BRANCH=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_ENV"
           echo "branch=${RAW_BRANCH_NAME//\//-}" >> "$GITHUB_OUTPUT"
@@ -208,15 +208,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p ./bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
+          mkdir -p _tests/bin
+          find _output -name "Radarr.dll" -exec dirname {} \; | head -n 1 | xargs -I {} cp -r {}/. ./bin/
+          cp -r ./bin/. _tests/bin/
 
       - name: Make Test Binaries Executable
         shell: bash
         run: |
-          chmod +x _tests/ffprobe
+          chmod +x _tests/ffprobe 2>/dev/null || true
           find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
           chmod +x _tests/test.sh
-          chmod +x ./bin/Radarr
+          chmod +x ./bin/Radarr 2>/dev/null || true
+          chmod +x _tests/bin/Radarr 2>/dev/null || true
 
       - name: Run Integration Tests
         shell: bash
@@ -280,15 +283,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p ./bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
+          mkdir -p _tests/bin
+          find _output -name "Radarr.dll" -exec dirname {} \; | head -n 1 | xargs -I {} cp -r {}/. ./bin/
+          cp -r ./bin/. _tests/bin/
 
       - name: Make Test Binaries Executable
         shell: bash
         run: |
-          chmod +x _tests/ffprobe
+          chmod +x _tests/ffprobe 2>/dev/null || true
           find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
           chmod +x _tests/test.sh
-          chmod +x ./bin/Radarr
+          chmod +x ./bin/Radarr 2>/dev/null || true
+          chmod +x _tests/bin/Radarr 2>/dev/null || true
 
       - name: Run Integration Tests (Postgres)
         shell: bash
@@ -331,15 +337,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p ./bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
+          mkdir -p _tests/bin
+          find _output -name "Radarr.dll" -exec dirname {} \; | head -n 1 | xargs -I {} cp -r {}/. ./bin/
+          cp -r ./bin/. _tests/bin/
 
       - name: Make Test Binaries Executable
         shell: bash
         run: |
-          chmod +x _tests/ffprobe
+          chmod +x _tests/ffprobe 2>/dev/null || true
           find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
           chmod +x _tests/test.sh
-          chmod +x ./bin/Radarr
+          chmod +x ./bin/Radarr 2>/dev/null || true
+          chmod +x _tests/bin/Radarr 2>/dev/null || true
 
       - name: Run Automation Tests
         shell: bash
