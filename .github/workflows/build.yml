@@ -78,7 +78,11 @@ jobs:
 
   unit_test:
     needs: build
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -89,7 +93,7 @@ jobs:
           global-json-file: global.json
 
       - name: Run Unit Tests
-        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS&TestCategory!=IntegrationTest"
+        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest"
 
   unit_test_postgres:
     needs: build
@@ -121,11 +125,15 @@ jobs:
           global-json-file: global.json
 
       - name: Run Unit Tests (Postgres)
-        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS&TestCategory!=IntegrationTest"
+        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest"
 
   integration_test:
     needs: build
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -136,4 +144,4 @@ jobs:
           global-json-file: global.json
 
       - name: Run Integration Tests
-        run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=WINDOWS"
+        run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj --filter "TestCategory!=ManualTest"
