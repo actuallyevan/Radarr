@@ -92,8 +92,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Run Unit Tests
-        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest"
+      - name: Run All Unit Tests
+        run: dotnet test src/**/*.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   unit_test_postgres:
     needs: build
@@ -124,8 +124,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Run Unit Tests (Postgres)
-        run: dotnet test src/NzbDrone.Core.Test/Radarr.Core.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest"
+      - name: Run All Unit Tests (Postgres)
+        run: dotnet test src/**/*.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   integration_test:
     needs: build
