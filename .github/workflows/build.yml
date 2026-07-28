@@ -100,8 +100,25 @@ jobs:
           name: tests-linux-x64
           path: _tests
 
-      - name: Run All Unit Tests
-        run: dotnet test ./_tests/Radarr.*.Test.dll --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest" --logger "trx;LogFileName=TestResult.xml"
+      - name: Make Test Binaries Executable
+        shell: bash
+        run: |
+          chmod +x _tests/ffprobe
+          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
+          chmod +x _tests/test.sh
+
+      - name: Run Unit Tests
+        shell: bash
+        env:
+          TEST_DIR: ${{ github.workspace }}/_tests
+        run: _tests/test.sh Linux Unit Test
+
+      - name: Upload Unit Test Results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-unit-linux
+          path: TestResult.xml
 
   unit_test_postgres:
     needs: build
@@ -142,8 +159,25 @@ jobs:
           name: tests-linux-x64
           path: _tests
 
-      - name: Run All Unit Tests (Postgres)
-        run: dotnet test ./_tests/Radarr.*.Test.dll --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest" --logger "trx;LogFileName=TestResult.xml"
+      - name: Make Test Binaries Executable
+        shell: bash
+        run: |
+          chmod +x _tests/ffprobe
+          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
+          chmod +x _tests/test.sh
+
+      - name: Run Unit Tests (Postgres)
+        shell: bash
+        env:
+          TEST_DIR: ${{ github.workspace }}/_tests
+        run: _tests/test.sh Linux Unit Test
+
+      - name: Upload Unit Test Results (Postgres)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-unit-linux-postgres-${{ matrix.postgres }}
+          path: TestResult.xml
 
   integration_test:
     needs: build
@@ -169,13 +203,32 @@ jobs:
           name: build_linux
           path: _output
 
-      - name: Setup Bin Directory
+      - name: Prepare Binary Directory
+        shell: bash
         run: |
-          mkdir -p _tests/bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. _tests/bin/
+          mkdir -p ./bin
+          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
+
+      - name: Make Test Binaries Executable
+        shell: bash
+        run: |
+          chmod +x _tests/ffprobe
+          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
+          chmod +x _tests/test.sh
+          chmod +x ./bin/Radarr
 
       - name: Run Integration Tests
-        run: dotnet test ./_tests/Radarr.Integration.Test.dll --filter "TestCategory!=ManualTest" --logger "trx;LogFileName=TestResult.xml"
+        shell: bash
+        env:
+          TEST_DIR: ${{ github.workspace }}/_tests
+        run: _tests/test.sh Linux Integration Test
+
+      - name: Upload Integration Test Results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-integration-linux
+          path: TestResult.xml
 
   integration_test_postgres:
     needs: build
@@ -222,13 +275,32 @@ jobs:
           name: build_linux
           path: _output
 
-      - name: Setup Bin Directory
+      - name: Prepare Binary Directory
+        shell: bash
         run: |
-          mkdir -p _tests/bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. _tests/bin/
+          mkdir -p ./bin
+          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
+
+      - name: Make Test Binaries Executable
+        shell: bash
+        run: |
+          chmod +x _tests/ffprobe
+          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
+          chmod +x _tests/test.sh
+          chmod +x ./bin/Radarr
 
       - name: Run Integration Tests (Postgres)
-        run: dotnet test ./_tests/Radarr.Integration.Test.dll --filter "TestCategory!=ManualTest" --logger "trx;LogFileName=TestResult.xml"
+        shell: bash
+        env:
+          TEST_DIR: ${{ github.workspace }}/_tests
+        run: _tests/test.sh Linux Integration Test
+
+      - name: Upload Integration Test Results (Postgres)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-integration-linux-postgres-${{ matrix.postgres }}
+          path: TestResult.xml
 
   automation_test:
     needs: build
@@ -254,10 +326,29 @@ jobs:
           name: build_linux
           path: _output
 
-      - name: Setup Bin Directory
+      - name: Prepare Binary Directory
+        shell: bash
         run: |
-          mkdir -p _tests/bin
-          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. _tests/bin/
+          mkdir -p ./bin
+          cp -r ./_output/linux-x64/${{ env.FRAMEWORK }}/Radarr/. ./bin/
+
+      - name: Make Test Binaries Executable
+        shell: bash
+        run: |
+          chmod +x _tests/ffprobe
+          find _tests -name "Radarr.Test.Dummy" -exec chmod +x {} \;
+          chmod +x _tests/test.sh
+          chmod +x ./bin/Radarr
 
       - name: Run Automation Tests
-        run: dotnet test ./_tests/Radarr.Automation.Test.dll --filter "TestCategory!=ManualTest" --logger "trx;LogFileName=TestResult.xml"
+        shell: bash
+        env:
+          TEST_DIR: ${{ github.workspace }}/_tests
+        run: _tests/test.sh Linux Automation Test
+
+      - name: Upload Automation Test Results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-automation-linux
+          path: TestResult.xml
