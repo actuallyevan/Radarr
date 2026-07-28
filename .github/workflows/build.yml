@@ -93,7 +93,7 @@ jobs:
           global-json-file: global.json
 
       - name: Run All Unit Tests
-        run: dotnet test src/**/*.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
+        run: dotnet test src/**/*.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   unit_test_postgres:
     needs: build
@@ -125,7 +125,7 @@ jobs:
           global-json-file: global.json
 
       - name: Run All Unit Tests (Postgres)
-        run: dotnet test src/**/*.Test.csproj --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
+        run: dotnet test src/**/*.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   integration_test:
     needs: build
@@ -144,4 +144,4 @@ jobs:
           global-json-file: global.json
 
       - name: Run Integration Tests
-        run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj --filter "TestCategory!=ManualTest"
+        run: dotnet test src/NzbDrone.Integration.Test/Radarr.Integration.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest"
