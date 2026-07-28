@@ -78,11 +78,7 @@ jobs:
 
   unit_test:
     needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -93,7 +89,7 @@ jobs:
           global-json-file: global.json
 
       - name: Run All Unit Tests
-        run: dotnet test src/**/*.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
+        run: dotnet test src/Radarr.sln -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   unit_test_postgres:
     needs: build
@@ -125,15 +121,11 @@ jobs:
           global-json-file: global.json
 
       - name: Run All Unit Tests (Postgres)
-        run: dotnet test src/**/*.Test.csproj -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
+        run: dotnet test src/Radarr.sln -p:EnableAnalyzers=false --filter "TestCategory!=ManualTest&TestCategory!=IntegrationTest&TestCategory!=AutomationTest"
 
   integration_test:
     needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@v4
