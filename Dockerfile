@@ -18,6 +18,8 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
   org.opencontainers.image.source="${PACKAGE_AUTHOR}" \
   org.opencontainers.image.version="${VERSION}"
 
+RUN rm -rf /app/radarr/bin/*
+
 COPY --from=binaries /${TARGETARCH}/. /app/radarr/bin/
 
 RUN echo -e "UpdateMethod=docker\nBranch=${RADARR_BRANCH}\nPackageVersion=${VERSION:-LocalBuild}\nPackageAuthor=${PACKAGE_AUTHOR}" > /app/radarr/package_info && \
