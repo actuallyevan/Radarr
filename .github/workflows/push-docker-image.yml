@@ -87,4 +87,3 @@ jobs:
             VERSION=${{ steps.get_version.outputs.VERSION }}
             RADARR_BRANCH=${{ inputs.branch }}
             PACKAGE_AUTHOR=github.com/${{ github.repository }}
-            RADARR_REPO=${{ github.repository }}
