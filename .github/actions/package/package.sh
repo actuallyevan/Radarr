@@ -15,7 +15,7 @@ do
   radarrFolder="$folderName/Radarr"
   archiveName="Radarr.$BRANCH.$RADARRVERSION.$name"
 
-  if [[ "$name" == 'UI' ]]; then
+  if [ ! -d "$radarrFolder" ]; then
     continue
   fi
     
