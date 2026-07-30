@@ -3,8 +3,8 @@ ARG BASE_IMAGE=ghcr.io/linuxserver/radarr:latest
 
 FROM scratch AS binaries
 ARG TARGETARCH
-COPY _artifacts/linux-musl-x64/net8.0/Radarr /amd64
-COPY _artifacts/linux-musl-arm64/net8.0/Radarr /arm64
+COPY _artifacts/linux-musl-x64/*/Radarr /amd64
+COPY _artifacts/linux-musl-arm64/*/Radarr /arm64
 
 FROM ${BASE_IMAGE}
 
