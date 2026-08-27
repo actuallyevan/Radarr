@@ -40,6 +40,7 @@ namespace NzbDrone.Core.MediaCover
         private readonly Logger _logger;
 
         private readonly string _coverRootFolder;
+        private readonly bool _disableMediaCoverCache;
 
         // ImageSharp is slow on ARM (no hardware acceleration on mono yet)
         // So limit the number of concurrent resizing tasks
@@ -65,6 +66,7 @@ namespace NzbDrone.Core.MediaCover
             _logger = logger;
 
             _coverRootFolder = appFolderInfo.GetMediaCoverPath();
+            _disableMediaCoverCache = bool.TryParse(Environment.GetEnvironmentVariable("DISABLE_MEDIA_COVER_CACHE"), out var disableMediaCoverCache) && disableMediaCoverCache;
         }
 
         public string GetCoverPath(int movieId, MediaCoverTypes coverType, int? height = null)
@@ -76,7 +78,7 @@ namespace NzbDrone.Core.MediaCover
 
         public Dictionary<string, FileInfo> GetCoverFileInfos()
         {
-            if (!_diskProvider.FolderExists(_coverRootFolder))
+            if (_disableMediaCoverCache || !_diskProvider.FolderExists(_coverRootFolder))
             {
                 return new Dictionary<string, FileInfo>();
             }
@@ -88,6 +90,16 @@ namespace NzbDrone.Core.MediaCover
 
         public void ConvertToLocalUrls(int movieId, IEnumerable<MediaCover> covers, Dictionary<string, FileInfo> fileInfos = null)
         {
+            if (_disableMediaCoverCache)
+            {
+                foreach (var mediaCover in covers)
+                {
+                    mediaCover.Url = mediaCover.RemoteUrl;
+                }
+
+                return;
+            }
+
             if (movieId == 0)
             {
                 // Movie isn't in Radarr yet, map via a proxy to circument referrer issues
@@ -143,6 +155,11 @@ namespace NzbDrone.Core.MediaCover
 
         private bool EnsureCovers(Movie movie)
         {
+            if (_disableMediaCoverCache)
+            {
+                return false;
+            }
+
             var updated = false;
             var toResize = new List<Tuple<MediaCover, bool>>();
 

@@ -7,6 +7,8 @@ using Moq;
 using NUnit.Framework;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
+using NzbDrone.Common.Http;
+using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.Movies;
 using NzbDrone.Core.Movies.Events;
@@ -15,13 +17,20 @@ using NzbDrone.Core.Test.Framework;
 namespace NzbDrone.Core.Test.MediaCoverTests
 {
     [TestFixture]
+    [NonParallelizable]
     public class MediaCoverServiceFixture : CoreTest<MediaCoverService>
     {
+        private const string DisableMediaCoverCacheEnvironmentVariable = "DISABLE_MEDIA_COVER_CACHE";
+
         private Movie _movie;
+        private string _previousDisableMediaCoverCacheValue;
 
         [SetUp]
         public void Setup()
         {
+            _previousDisableMediaCoverCacheValue = Environment.GetEnvironmentVariable(DisableMediaCoverCacheEnvironmentVariable);
+            Environment.SetEnvironmentVariable(DisableMediaCoverCacheEnvironmentVariable, null);
+
             Mocker.SetConstant<IAppFolderInfo>(new AppFolderInfo(Mocker.Resolve<IStartupContext>()));
 
             _movie = Builder<Movie>.CreateNew()
@@ -30,6 +39,12 @@ namespace NzbDrone.Core.Test.MediaCoverTests
                 .Build();
 
             Mocker.GetMock<IMovieService>().Setup(m => m.GetMovie(It.Is<int>(id => id == _movie.Id))).Returns(_movie);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Environment.SetEnvironmentVariable(DisableMediaCoverCacheEnvironmentVariable, _previousDisableMediaCoverCacheValue);
         }
 
         [Test]
@@ -62,6 +77,34 @@ namespace NzbDrone.Core.Test.MediaCoverTests
             Subject.ConvertToLocalUrls(12, covers);
 
             covers.Single().Url.Should().Be("/MediaCover/12/banner.jpg");
+        }
+
+        [Test]
+        public void should_use_remote_cover_urls_when_cache_is_disabled()
+        {
+            Environment.SetEnvironmentVariable(DisableMediaCoverCacheEnvironmentVariable, "true");
+            var covers = new List<MediaCover.MediaCover>
+                {
+                    new MediaCover.MediaCover { CoverType = MediaCoverTypes.Banner, RemoteUrl = "https://example.com/banner.jpg" }
+                };
+
+            Subject.ConvertToLocalUrls(12, covers);
+
+            covers.Single().Url.Should().Be("https://example.com/banner.jpg");
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.FileExists(It.IsAny<string>()), Times.Never());
+        }
+
+        [Test]
+        public void should_not_download_or_resize_covers_when_cache_is_disabled()
+        {
+            Environment.SetEnvironmentVariable(DisableMediaCoverCacheEnvironmentVariable, "true");
+
+            Subject.HandleAsync(new MovieUpdatedEvent(_movie));
+
+            Mocker.GetMock<ICoverExistsSpecification>().Verify(v => v.AlreadyExists(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+            Mocker.GetMock<IHttpClient>().Verify(v => v.DownloadFile(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+            Mocker.GetMock<IImageResizer>().Verify(v => v.Resize(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never());
+            Mocker.GetMock<IEventAggregator>().Verify(v => v.PublishEvent(It.IsAny<MediaCoversUpdatedEvent>()), Times.Once());
         }
 
         [Test]
