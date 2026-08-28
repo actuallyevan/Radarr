@@ -16,6 +16,7 @@ radarr:
       # Add env vars for any tweaks you want to enable
       - IGNORE_MATCH_BY_ID_WARNING=true
       - IMPROVE_QUEUE_RESPONSIVENESS=true
+      - DISABLE_MEDIA_COVER_CACHE=true
     volumes:
       - /path/to/radarr/data:/config
       # Additional volume mounts for your media, etc
@@ -53,3 +54,7 @@ This generally happens on usenet indexers that include a `tmdbId` in releases th
 #### IMPROVE_QUEUE_RESPONSIVENESS
 
 Ensures that the `RefreshMonitoredDownloadsCommand` and `ProcessMonitoredDownloads` commands always execute immediately by reserving 3 additional slots for these commands. This improves UI responsiveness for the current state of the activity queue, ensuring the activity queue reflects what's happening in real time, even when many search tasks are queued.
+
+#### DISABLE_MEDIA_COVER_CACHE
+
+When set to `true`, Radarr will not download or store media cover images locally in the `MediaCover/` folder. Instead, cover URLs will point directly to remote sources (e.g., TMDB). This saves disk space and I/O for infinite/remote library setups where covers are only needed for display. Existing cached images are left untouched — delete the `MediaCover/` folder manually to reclaim space. Recommended for debrid/usenet streaming setups.
