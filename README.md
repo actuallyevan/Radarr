@@ -1,4 +1,4 @@
-# Radarr
+# Radar
 
 ## Installation
 
