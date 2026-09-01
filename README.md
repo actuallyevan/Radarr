@@ -5,7 +5,7 @@
 This fork is designed to be a drop-in replacement for existing Radarr docker installations. Simply replace your Radarr docker image with `ghcr.io/actuallyevan/radarr:latest`
 
 Sample docker compose:
-```docker
+```yaml
 radarr:
     image: ghcr.io/actuallyevan/radarr:latest
     container_name: radarr
@@ -48,7 +48,8 @@ Found matching movie via grab history, but release was matched to movie by ID. M
 
 This generally happens on indexers that include a tmdbId in releases that Radarr uses to match against movies while downloading. But during imports, if the files are obfuscated or the file/movie name doesn't match up with Radarr's expectations, it blocks automatic import.
 
-⚠️ Only use this setting if you trust your indexers to provide the correct tmdbIds when they're present on releases.
+> [!WARNING]
+> Only use this setting if you trust your indexers to provide the correct tmdbIds when they are present on releases.
 
 #### IMPROVE_QUEUE_RESPONSIVENESS
 
