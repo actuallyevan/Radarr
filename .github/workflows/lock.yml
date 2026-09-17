@@ -13,6 +13,7 @@ jobs:
       pull-requests: write # to lock PRs (dessant/lock-threads)
 
     runs-on: ubuntu-latest
+    if: github.repository == 'Radarr/Radarr'
     steps:
       - uses: dessant/lock-threads@v6
         with:
