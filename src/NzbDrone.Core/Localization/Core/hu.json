@@ -102,7 +102,7 @@
     "CouldNotFindResults": "Nem található találat a következőre: „{term}”",
     "CopyUsingHardlinksHelpTextWarning": "Előfordulhat, hogy a fájl zárolások megakadályozzák a seedelés alatt álló fájlok átnevezését. Ideiglenesen kikapcsolhatja a seedelést, és kerülőmegoldásként használhatja a {appName} átnevezési funkcióját.",
     "CopyUsingHardlinksMovieHelpText": "A hardlinkek lehetővé teszik, hogy a {appName} a seedelő torrenteket a filmek mappájába importálja anélkül, hogy extra lemezterületet foglalna, vagy a fájl teljes tartalmát lemásolná. A hardlinkek csak akkor működnek, ha a forrás és a cél ugyanazon a köteten található",
-    "CopyToClipboard": "Másolja a vágólapra",
+    "CopyToClipboard": "Másolás a vágólapra",
     "ConnectSettingsSummary": "Értesítések, médiakiszolgálók/lejátszók kapcsolatai és egyéni szkriptek",
     "ConnectSettings": "Kapcsolati beállítások",
     "Connections": "Kapcsolatok",
@@ -2049,5 +2049,15 @@
     "ImportListsSimklSettingsUserListTypePlanToWatch": "Nézni tervezett",
     "ImportListsSimklSettingsUserListTypeWatching": "Jelenleg nézett",
     "ImportListsSimklSettingsMovieTypeHelpText": "A film típusa, amelyből importálni szeretne",
-    "ImportListsSimklSettingsMovieType": "Film típusa"
+    "ImportListsSimklSettingsMovieType": "Film típusa",
+    "Friday": "Péntek",
+    "Saturday": "Szombat",
+    "Thursday": "Csütörtök",
+    "Tuesday": "Kedd",
+    "Wednesday": "Szerda",
+    "AllowedHosts": "Engedélyezett hosztok",
+    "AllowedHostsHelpText": "A {appName} által elfogadott hosztnevek és IP-címek vesszővel elválasztott listája. Az aldomainek helyettesítésére használja a „*.” karaktert. Ha üresen hagyja, akkor minden hosztot engedélyez.",
+    "AllowedHostsNotConfiguredHealthCheckMessage": "A „Megengedett hosztok” beállítás nincs konfigurálva, ezért a {appName} bármely hosztnévhez érkező kérést elfogadja. Az „Általános” beállítások között állítsa be a „Megengedett hosztok” beállítást, hogy korlátozza, mely hosztnevekről érhető el a {appName}.",
+    "TrustedNetworks": "Megbízható hálózatok",
+    "TrustedNetworksHelpText": "A megbízható fordított proxy-k által használt IP-címek vagy hálózatok CIDR-jelölésben megadott, vesszővel elválasztott listája. Például: 172.17.0.1, 10.0.0.0/8 vagy fc00::/7. Csak olyan proxy-kat vegyen fel a listára, amelyek megfelelően vannak beállítva a helyes fejlécek küldésére."
 }
