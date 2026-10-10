@@ -15,18 +15,18 @@ namespace NzbDrone.Core.Extras.Metadata
         private readonly IExtraFileService<MetadataFile> _metadataFileService;
         private readonly IParsingService _parsingService;
         private readonly Logger _logger;
-        private readonly List<IMetadata> _consumers;
+        private readonly IMetadataFactory _metadataFactory;
 
         public ExistingMetadataImporter(IExtraFileService<MetadataFile> metadataFileService,
-                                        IEnumerable<IMetadata> consumers,
+                                        IMetadataFactory metadataFactory,
                                         IParsingService parsingService,
                                         Logger logger)
         : base(metadataFileService)
         {
             _metadataFileService = metadataFileService;
+            _metadataFactory = metadataFactory;
             _parsingService = parsingService;
             _logger = logger;
-            _consumers = consumers.ToList();
         }
 
         public override int Order => 0;
@@ -38,6 +38,24 @@ namespace NzbDrone.Core.Extras.Metadata
             var metadataFiles = new List<MetadataFile>();
             var filterResult = FilterAndClean(movie, filesOnDisk, importedFiles, fileNameBeforeRename is not null);
 
+            // Only metadata types that are enabled may claim files. A disabled type would
+            // otherwise register files that other software wrote (folder.jpg and the like)
+            // as Radarr's own, and they would be deleted with the movie file on an upgrade.
+            var consumers = _metadataFactory.Enabled();
+            var enabledConsumers = consumers.Select(c => c.GetType().Name).ToHashSet();
+
+            // Forget entries an earlier scan made for a type that is not enabled now.
+            // Only the database rows go, the files stay on disk.
+            var stale = filterResult.PreviouslyImported.Where(f => !enabledConsumers.Contains(f.Consumer)).ToList();
+
+            if (stale.Any())
+            {
+                _logger.Debug("Forgetting {0} metadata files from metadata types that are not enabled", stale.Count);
+                _metadataFileService.DeleteMany(stale.Select(f => f.Id));
+            }
+
+            var previouslyImported = filterResult.PreviouslyImported.Except(stale).ToList();
+
             foreach (var possibleMetadataFile in filterResult.FilesOnDisk)
             {
                 // Don't process files that have known Subtitle file extensions (saves a bit of unnecessary processing)
@@ -47,7 +65,7 @@ namespace NzbDrone.Core.Extras.Metadata
                     continue;
                 }
 
-                foreach (var consumer in _consumers)
+                foreach (var consumer in consumers)
                 {
                     var metadata = consumer.FindMetadataFile(movie, possibleMetadataFile);
 
@@ -81,7 +99,7 @@ namespace NzbDrone.Core.Extras.Metadata
 
             // Return files that were just imported along with files that were
             // previously imported so previously imported files aren't imported twice
-            return metadataFiles.Concat(filterResult.PreviouslyImported);
+            return metadataFiles.Concat(previouslyImported);
         }
     }
 }
